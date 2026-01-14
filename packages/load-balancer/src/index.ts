@@ -1,1 +1,1 @@
-export { SessionStrategy } from "./strategies";
+export { RoundRobinStrategy, SessionStrategy } from "./strategies";

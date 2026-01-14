@@ -93,3 +93,43 @@ export class SessionStrategy implements LoadBalancingStrategy {
 		return [chosenAccount, ...others];
 	}
 }
+
+export class RoundRobinStrategy implements LoadBalancingStrategy {
+	private currentIndex = 0;
+	private log = new Logger("RoundRobinStrategy");
+
+	initialize(_store: StrategyStore): void {
+		// Round-robin doesn't need store access, but we implement the interface
+	}
+
+	select(accounts: Account[], _meta: RequestMeta): Account[] {
+		const now = Date.now();
+
+		// Filter available accounts (not rate-limited, not paused)
+		const available = accounts.filter((a) => isAccountAvailable(a, now));
+
+		if (available.length === 0) return [];
+
+		// For single account, return it directly
+		if (available.length === 1) {
+			this.log.debug(`Only one available account: ${available[0].name}`);
+			return [available[0]];
+		}
+
+		// Get the next account using round-robin
+		const selectedAccount = available[this.currentIndex];
+
+		// Move to next index, wrapping around
+		this.currentIndex = (this.currentIndex + 1) % available.length;
+
+		this.log.info(
+			`Selected account ${selectedAccount.name} (index ${this.currentIndex - 1}/${available.length})`,
+		);
+
+		// Return selected account first, then others as fallback in round-robin order
+		const selectedId = selectedAccount.id;
+		const others = available.filter((a) => a.id !== selectedId);
+
+		return [selectedAccount, ...others];
+	}
+}

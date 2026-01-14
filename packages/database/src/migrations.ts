@@ -170,6 +170,12 @@ export function runMigrations(db: Database): void {
 		log.info("Added rate_limit_remaining column to accounts table");
 	}
 
+	// Add base_url column for API key accounts if it doesn't exist
+	if (!accountsColumnNames.includes("base_url")) {
+		db.prepare("ALTER TABLE accounts ADD COLUMN base_url TEXT").run();
+		log.info("Added base_url column to accounts table");
+	}
+
 	// Check columns in requests table
 	const requestsInfo = db
 		.prepare("PRAGMA table_info(requests)")

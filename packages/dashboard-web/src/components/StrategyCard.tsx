@@ -18,6 +18,13 @@ import {
 } from "./ui/select";
 import { Skeleton } from "./ui/skeleton";
 
+const strategyDescriptions: Record<string, string> = {
+	session:
+		"Maintains 5-hour sessions with a single account to minimize rate limits",
+	"round-robin":
+		"Distributes requests evenly across all available accounts in rotation",
+};
+
 export function StrategyCard() {
 	const [currentStrategy, setCurrentStrategy] = useState<string>("");
 	const [strategies, setStrategies] = useState<string[]>([]);
@@ -138,8 +145,9 @@ export function StrategyCard() {
 
 					<div className="text-xs text-muted-foreground">
 						<p>
-							<strong>session:</strong> Maintains 5-hour sessions with a single
-							account to minimize rate limits
+							<strong>{currentStrategy}:</strong>{" "}
+							{strategyDescriptions[currentStrategy] ||
+								"No description available"}
 						</p>
 					</div>
 				</div>

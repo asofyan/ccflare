@@ -4,8 +4,8 @@ import { BaseRepository } from "./base.repository";
 export class AccountRepository extends BaseRepository<Account> {
 	findAll(): Account[] {
 		const rows = this.query<AccountRow>(`
-			SELECT 
-				id, name, provider, api_key, refresh_token, access_token,
+			SELECT
+				id, name, provider, api_key, base_url, refresh_token, access_token,
 				expires_at, created_at, last_used, request_count, total_requests,
 				rate_limited_until, session_start, session_request_count,
 				COALESCE(account_tier, 1) as account_tier,
@@ -19,8 +19,8 @@ export class AccountRepository extends BaseRepository<Account> {
 	findById(accountId: string): Account | null {
 		const row = this.get<AccountRow>(
 			`
-			SELECT 
-				id, name, provider, api_key, refresh_token, access_token,
+			SELECT
+				id, name, provider, api_key, base_url, refresh_token, access_token,
 				expires_at, created_at, last_used, request_count, total_requests,
 				rate_limited_until, session_start, session_request_count,
 				COALESCE(account_tier, 1) as account_tier,

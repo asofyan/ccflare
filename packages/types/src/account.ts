@@ -7,6 +7,7 @@ export interface AccountRow {
 	name: string;
 	provider: string | null;
 	api_key: string | null;
+	base_url: string | null;
 	refresh_token: string;
 	access_token: string | null;
 	expires_at: number | null;
@@ -30,6 +31,7 @@ export interface Account {
 	name: string;
 	provider: string;
 	api_key: string | null;
+	base_url: string | null;
 	refresh_token: string;
 	access_token: string | null;
 	expires_at: number | null;
@@ -109,8 +111,10 @@ export interface AccountListItem {
 // Account creation types
 export interface AddAccountOptions {
 	name: string;
-	mode?: "max" | "console";
+	mode?: "max" | "console" | "api-key";
 	tier?: 1 | 5 | 20;
+	baseUrl?: string;
+	apiKey?: string;
 }
 
 export interface AccountDeleteRequest {
@@ -124,6 +128,7 @@ export function toAccount(row: AccountRow): Account {
 		name: row.name,
 		provider: row.provider || "anthropic",
 		api_key: row.api_key,
+		base_url: row.base_url,
 		refresh_token: row.refresh_token,
 		access_token: row.access_token,
 		expires_at: row.expires_at,

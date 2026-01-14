@@ -2,6 +2,7 @@ import type { Account } from "./account";
 
 export enum StrategyName {
 	Session = "session",
+	RoundRobin = "round-robin",
 }
 
 /**

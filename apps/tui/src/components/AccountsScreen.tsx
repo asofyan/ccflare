@@ -10,17 +10,29 @@ interface AccountsScreenProps {
 	onBack: () => void;
 }
 
-type Mode = "list" | "add" | "remove" | "confirmRemove" | "waitingForCode";
+type Mode =
+	| "list"
+	| "add"
+	| "addApiKey"
+	| "remove"
+	| "confirmRemove"
+	| "waitingForCode"
+	| "authType";
+
+type AuthType = "oauth" | "api-key" | null;
 
 export function AccountsScreen({ onBack }: AccountsScreenProps) {
 	const [mode, setMode] = useState<Mode>("list");
 	const [accounts, setAccounts] = useState<AccountDisplay[]>([]);
 	const [newAccountName, setNewAccountName] = useState("");
 	const [selectedMode, setSelectedMode] = useState<"max" | "console">("max");
+	const [_authType, setAuthType] = useState<AuthType>(null);
 	const [selectedTier, setSelectedTier] = useState<1 | 5 | 20>(1);
-	const [step, setStep] = useState<"name" | "mode" | "tier" | "confirm">(
-		"name",
-	);
+	const [step, setStep] = useState<
+		"name" | "mode" | "tier" | "baseUrl" | "apiKey" | "confirm"
+	>("name");
+	const [baseUrl, setBaseUrl] = useState("");
+	const [apiKey, setApiKey] = useState("");
 	const [authCode, setAuthCode] = useState("");
 	const [oauthFlowData, setOauthFlowData] =
 		useState<tuiCore.OAuthFlowResult | null>(null);
@@ -49,6 +61,16 @@ export function AccountsScreen({ onBack }: AccountsScreenProps) {
 		}
 	});
 
+	const handleSelectAuthType = (type: "oauth" | "api-key") => {
+		setAuthType(type);
+		if (type === "oauth") {
+			setMode("add");
+		} else {
+			setMode("addApiKey");
+		}
+		setStep("name");
+	};
+
 	const loadAccounts = useCallback(async () => {
 		const data = await tuiCore.getAccounts();
 		setAccounts(data);
@@ -71,6 +93,31 @@ export function AccountsScreen({ onBack }: AccountsScreenProps) {
 		} catch (error) {
 			setError(
 				error instanceof Error ? error.message : "Failed to begin OAuth flow",
+			);
+		}
+	};
+
+	const handleAddApiKeyAccount = async () => {
+		try {
+			await tuiCore.addApiKeyAccount({
+				name: newAccountName,
+				baseUrl: baseUrl,
+				apiKey: apiKey,
+				mode: "api-key",
+				tier: 1,
+			});
+			await loadAccounts();
+			setMode("list");
+			setNewAccountName("");
+			setBaseUrl("");
+			setApiKey("");
+			setStep("name");
+			setError(null);
+		} catch (error) {
+			setError(
+				error instanceof Error
+					? error.message
+					: "Failed to add API key account",
 			);
 		}
 	};
@@ -122,6 +169,47 @@ export function AccountsScreen({ onBack }: AccountsScreenProps) {
 		}
 	};
 
+	if (mode === "authType") {
+		return (
+			<Box flexDirection="column" padding={1}>
+				<Text color="cyan" bold>
+					Add Account
+				</Text>
+
+				<Box marginTop={1}>
+					<Text>Choose authentication method:</Text>
+				</Box>
+
+				<Box marginTop={1}>
+					<SelectInput
+						items={[
+							{ label: "OAuth (Browser authentication)", value: "oauth" },
+							{ label: "API Key (Direct access)", value: "api-key" },
+							{ label: "← Cancel", value: "cancel" },
+						]}
+						onSelect={(item) => {
+							if (item.value === "cancel") {
+								setMode("list");
+							} else {
+								handleSelectAuthType(item.value as "oauth" | "api-key");
+							}
+						}}
+					/>
+				</Box>
+
+				{error && (
+					<Box marginTop={1}>
+						<Text color="red">{error}</Text>
+					</Box>
+				)}
+
+				<Box marginTop={2}>
+					<Text dimColor>Press ESC to cancel</Text>
+				</Box>
+			</Box>
+		);
+	}
+
 	if (mode === "add") {
 		return (
 			<Box flexDirection="column" padding={1}>
@@ -170,6 +258,97 @@ export function AccountsScreen({ onBack }: AccountsScreenProps) {
 							onSelect={(item) => {
 								setSelectedTier(item.value as 1 | 5 | 20);
 								handleBeginAddAccount();
+							}}
+						/>
+					</Box>
+				)}
+
+				{step === "baseUrl" && (
+					<Box flexDirection="column" marginTop={1}>
+						<Text>Anthropic Base URL:</Text>
+						<TextInput
+							value={baseUrl}
+							onChange={setBaseUrl}
+							onSubmit={() => {
+								if (baseUrl) setStep("apiKey");
+							}}
+						/>
+						<Box marginTop={1}>
+							<Text dimColor>e.g., https://api.anthropic.com</Text>
+						</Box>
+					</Box>
+				)}
+
+				{step === "apiKey" && (
+					<Box flexDirection="column" marginTop={1}>
+						<Text>Anthropic API Key:</Text>
+						<TextInput
+							value={apiKey}
+							onChange={setApiKey}
+							onSubmit={() => {
+								if (apiKey) handleAddApiKeyAccount();
+							}}
+						/>
+					</Box>
+				)}
+
+				{error && (
+					<Box marginTop={1}>
+						<Text color="red">{error}</Text>
+					</Box>
+				)}
+
+				<Box marginTop={2}>
+					<Text dimColor>Press ESC to cancel</Text>
+				</Box>
+			</Box>
+		);
+	}
+
+	if (mode === "addApiKey") {
+		return (
+			<Box flexDirection="column" padding={1}>
+				<Text color="cyan" bold>
+					Add API Key Account
+				</Text>
+
+				{step === "name" && (
+					<Box flexDirection="column" marginTop={1}>
+						<Text>Account name:</Text>
+						<TextInput
+							value={newAccountName}
+							onChange={setNewAccountName}
+							onSubmit={() => {
+								if (newAccountName) setStep("baseUrl");
+							}}
+						/>
+					</Box>
+				)}
+
+				{step === "baseUrl" && (
+					<Box flexDirection="column" marginTop={1}>
+						<Text>Anthropic Base URL:</Text>
+						<TextInput
+							value={baseUrl}
+							onChange={setBaseUrl}
+							onSubmit={() => {
+								if (baseUrl) setStep("apiKey");
+							}}
+						/>
+						<Box marginTop={1}>
+							<Text dimColor>e.g., https://api.anthropic.com</Text>
+						</Box>
+					</Box>
+				)}
+
+				{step === "apiKey" && (
+					<Box flexDirection="column" marginTop={1}>
+						<Text>Anthropic API Key:</Text>
+						<TextInput
+							value={apiKey}
+							onChange={setApiKey}
+							onSubmit={() => {
+								if (apiKey) handleAddApiKeyAccount();
 							}}
 						/>
 					</Box>
